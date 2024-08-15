@@ -2,4 +2,4 @@
 
 zip -r propainter.zip ./* -x ".venv"\
                           -x ".gitignore"\
-                          -x ".idea"\
+                          -x ".idea"

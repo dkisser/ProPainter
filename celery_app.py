@@ -11,7 +11,8 @@ import sys
 root_dir = sys.path[0]
 destination = root_dir + "/inputs/remove_logo"
 os.makedirs(destination, exist_ok=True)
-notify_url = "https://api.aijijiang.com/backend_task/notify/complete"
+# notify_url = "https://api.aijijiang.com/backend_task/notify/complete"
+notify_url = "http://api-test.aijijiang.com/backend_task/notify/complete"
 # 需要填写你的 Access Key 和 Secret Key
 access_key = 'O5X1WeHugGmzA2-1oS32qPh1pkypNVWJ2ksJ4Hlc'
 secret_key = 'mXWg4Q1tUV6g3y_SGGBGFqOLfW2TI5iJoVcUlHJ1'

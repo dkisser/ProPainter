@@ -95,10 +95,7 @@ def uploadQiniu(output_dir, taskid, video_name):
     print(info)
     assert ret['key'] == key
     assert ret['hash'] == etag(local_file)
-    obj = info.json()
-    url = obj['url'] + key
-    print(f"video_url: {url}")
-    return url
+    return key
 
 
 

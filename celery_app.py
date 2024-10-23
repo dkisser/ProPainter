@@ -55,9 +55,9 @@ def background_task(request: dict):
         print(output)
         if output.returncode == 0:
             # upload
-            uploadQiniu(output_dir, taskid, video_name)
+            video_url = uploadQiniu(output_dir, taskid, video_name)
             # notify success
-            resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": True})
+            resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": True, "resultUrl": video_url})
             print(f"{taskid} 去水印任务已经完成")
             if resp.status_code == 200:
                 result = resp.text
@@ -95,6 +95,11 @@ def uploadQiniu(output_dir, taskid, video_name):
     print(info)
     assert ret['key'] == key
     assert ret['hash'] == etag(local_file)
+    obj = info.json()
+    url = obj['url'] + key
+    print(f"video_url: {url}")
+    return url
+
 
 
 def downloadFile(filePath: str) -> str:

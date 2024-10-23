@@ -49,7 +49,7 @@ def background_task(request: dict):
                 '--subvideo_length', '56',
                 '--neighbor_length', '7',
                 '--ref_stride', '13',
-                '--resize_ratio', '0.5',
+                # '--resize_ratio', '0.5',
                 '--fp16']
         output = subprocess.run(args, capture_output=True, text=True)
         print(output)

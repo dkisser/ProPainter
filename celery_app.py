@@ -49,7 +49,7 @@ def background_task(request: dict):
                 ' --subvideo_length', 64,
                 '--neighbor_length', 8,
                 '--ref_stride', 12,
-                '--resize_ratio', 12,
+                '--resize_ratio', 0.8,
                 # '--height', '320',
                 # '--width', '576',
                 '--fp16']

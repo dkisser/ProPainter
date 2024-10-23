@@ -46,7 +46,7 @@ def background_task(request: dict):
                 '--video', video_path,
                 '--mask', image_path,
                 '--output', output_dir,
-                ' --subvideo_length', '64',
+                '--subvideo_length', '64',
                 '--neighbor_length', '8',
                 '--ref_stride', '12',
                 '--resize_ratio', '0.8',

@@ -46,12 +46,10 @@ def background_task(request: dict):
                 '--video', video_path,
                 '--mask', image_path,
                 '--output', output_dir,
-                '--subvideo_length', '64',
-                # '--neighbor_length', '8',
-                # '--ref_stride', '12',
-                '--resize_ratio', '0.8',
-                # '--height', '320',
-                # '--width', '576',
+                '--subvideo_length', '56',
+                '--neighbor_length', '7',
+                '--ref_stride', '13',
+                '--resize_ratio', '0.5',
                 '--fp16']
         output = subprocess.run(args, capture_output=True, text=True)
         print(output)

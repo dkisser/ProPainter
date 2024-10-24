@@ -33,7 +33,7 @@ app.conf.setdefault("REDIS_BACKEND_HEALTH_CHECK_INTERVAL", 5)
 app.conf.setdefault("broker_connection_retry_on_startup", True)
 
 
-@app.task
+@app.task(queue="remove_logo_queue")
 def background_task(request: dict):
     taskid = current_task.request.id
     try:

@@ -24,7 +24,7 @@ class TaskQueryReqeust(BaseModel):
 
 @app.post('/process_image')
 async def process_image(request: ImageRequest):
-    result = celery_app.background_task.delay(request.to_json())
+    result = celery_app.background_task.apply_async(args=[request.to_json()], queue='remove_logo_queue')
     return {"message": "Task initiated", "task_id": result.id}
 
 

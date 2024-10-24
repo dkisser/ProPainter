@@ -5,7 +5,7 @@ import traceback
 from celery import Celery, current_task
 import requests
 from fastapi import HTTPException
-from qiniu import Auth, put_file, etag
+from qiniu import Auth, put_file, etag, BucketManager
 import sys
 
 root_dir = sys.path[0]
@@ -18,6 +18,7 @@ access_key = 'O5X1WeHugGmzA2-1oS32qPh1pkypNVWJ2ksJ4Hlc'
 secret_key = 'mXWg4Q1tUV6g3y_SGGBGFqOLfW2TI5iJoVcUlHJ1'
 # 构建鉴权对象
 q = Auth(access_key, secret_key)
+bucket = BucketManager(q)
 # 要上传的空间
 bucket_name = 'ai-haoyin'
 
@@ -95,8 +96,11 @@ def uploadQiniu(output_dir, taskid, video_name):
     print(info)
     assert ret['key'] == key
     assert ret['hash'] == etag(local_file)
+    # 更新的生命周期
+    days = '60'
+    ret, info = bucket.delete_after_days(bucket_name, key, days)
+    print(info)
     return key
-
 
 
 def downloadFile(filePath: str) -> str:

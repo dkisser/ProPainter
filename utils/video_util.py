@@ -58,7 +58,7 @@ def split_video(input_path, output_dir, segment_duration):
 
 
 # 视频合并
-def merge_videos(input_dir, output_path, scan_sub_dir:bool = False):
+def merge_videos(input_dir, output_path, scan_sub_dir:bool = False, regexp='.mp4'):
     """
 
     Args:
@@ -70,9 +70,9 @@ def merge_videos(input_dir, output_path, scan_sub_dir:bool = False):
 
     """
     # 获取所有视频片段
-    video_files = get_subdir_mp4_files(input_dir) \
+    video_files = get_subdir_mp4_files(input_dir, regexp) \
         if scan_sub_dir \
-        else sorted([f for f in os.listdir(input_dir) if f.endswith('.mp4')])
+        else sorted([f for f in os.listdir(input_dir) if f.endswith(regexp)])
     if len(video_files) == 0:
         raise FileNotFoundError
 
@@ -103,14 +103,14 @@ def merge_videos(input_dir, output_path, scan_sub_dir:bool = False):
     out.release()
 
 
-def get_subdir_mp4_files(input_dir) -> []:
+def get_subdir_mp4_files(input_dir, regexp='.mp4') -> []:
     mp4_files = []
     for root, dirs, files in os.walk(input_dir):
         for dir in dirs:
             sub_path = os.path.join(root, dir)
             for sub_root, sub_dirs, sub_files in os.walk(sub_path):
                 for file in sub_files:
-                    if file.endswith('.mp4'):
+                    if file.endswith(regexp):
                         mp4_files.append(os.path.join(sub_root, file))
         # for file in files:
         #     if file.endswith('.mp4'):

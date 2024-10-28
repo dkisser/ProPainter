@@ -8,6 +8,8 @@ from fastapi import HTTPException
 from qiniu import Auth, put_file, etag, BucketManager
 import sys
 
+from utils import video_util
+
 root_dir = sys.path[0]
 destination = root_dir + "/inputs/remove_logo"
 os.makedirs(destination, exist_ok=True)
@@ -58,7 +60,8 @@ def background_task(request: dict):
             # upload
             video_url = uploadQiniu(output_dir, taskid, video_name)
             # notify success
-            resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": True, "resultUrl": video_url})
+            resp = requests.post(notify_url,
+                                 json={"backendTaskId": taskid, "taskType": 1, "success": True, "resultUrl": video_url})
             print(f"{taskid} 去水印任务已经完成")
             if resp.status_code == 200:
                 result = resp.text
@@ -82,6 +85,69 @@ def background_task(request: dict):
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback)
+
+
+@app.task
+def background_taskV2(request: dict):
+    taskid = current_task.request.id
+    try:
+        image_path = downloadFile(request['image_path'])
+        video_path = downloadFile(request['video_path'])
+
+        output_dir = f"results/{taskid}"
+        split_output_dir = f"results/{taskid}/split"
+        os.makedirs(output_dir, exist_ok=True)
+        # split
+        split_videos = video_util.split_video(video_path, split_output_dir, 5)
+        print("开始执行去水印任务。")
+        for video in split_videos:
+            print(f"正在执行 {video}去水印。")
+            video_name = getFileName(video)
+            removeLogo(image_path, split_output_dir, taskid, video_name, video)
+            print(f"{video}去水印执行成功。")
+        #merge
+        video_util.merge_videos(f"{root_dir}/{split_output_dir}", output_dir, True)
+        print(f"{taskid} 去水印任务已经完成")
+    except Exception:
+        print(f"{taskid} 执行异常，请及时处理异常: {Exception}")
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback)
+
+
+def removeLogo(image_path, output_dir, taskid, video_name, video_path):
+    args = ['python', 'inference_propainter.py',
+            '--video', video_path,
+            '--mask', image_path,
+            '--output', output_dir,
+            # '--subvideo_length', '56',
+            # '--neighbor_length', '7',
+            # '--ref_stride', '13',
+            # '--resize_ratio', '0.5',
+            '--fp16']
+    output = subprocess.run(args, capture_output=True, text=True)
+    if output.returncode == 0:
+        # upload
+        video_url = uploadQiniu(output_dir, taskid, video_name)
+        # notify success
+        resp = requests.post(notify_url,
+                             json={"backendTaskId": taskid, "taskType": 1, "success": True, "resultUrl": video_url})
+        if resp.status_code == 200:
+            result = resp.text
+            print(result)
+            # if result["code"] != "10000":
+            #     print(f"{task_id} 更新任务状态失败。原因: {result}")
+
+        else:
+            print(f"{taskid} 更新任务状态失败，code: {resp.status_code}, message: {resp.reason}")
+
+    else:
+        print(f"{taskid} 执行异常，请及时处理错误: {output}")
+        # notify error
+        resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": False,
+                                               "reason": "执行去水印任务失败，请及时联系管理员处理"})
+        if resp.status_code != 200:
+            print(f"{taskid} 更新任务状态失败，code: {resp.status_code}, message: {resp.reason}")
 
 
 def uploadQiniu(output_dir, taskid, video_name):

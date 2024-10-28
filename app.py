@@ -28,6 +28,12 @@ async def process_image(request: ImageRequest):
     return {"message": "Task initiated", "task_id": result.id}
 
 
+@app.post('/process_imageV2')
+async def process_imageV2(request: ImageRequest):
+    result = celery_app.background_taskV2.delay(request.to_json())
+    return {"message": "Task initiated", "task_id": result.id}
+
+
 @app.get("/task/{task_id}/result")
 async def get_task_result(task_id: str):
     task_result = AsyncResult(str(task_id), app=celery_app.app)

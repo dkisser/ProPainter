@@ -12,6 +12,7 @@ from utils import video_util
 
 root_dir = sys.path[0]
 destination = root_dir + "/inputs/remove_logo"
+output_name = "inpaint_out.mp4"
 os.makedirs(destination, exist_ok=True)
 notify_url = "https://api.aijijiang.com/backend_task/notify/complete"
 # notify_url = "http://api-test.aijijiang.com/backend_task/notify/complete"
@@ -107,7 +108,20 @@ def background_taskV2(request: dict):
             removeLogo(image_path, split_output_dir, taskid, video_name, video)
             print(f"{video}去水印执行成功。")
         #merge
-        video_util.merge_videos(f"{root_dir}/{split_output_dir}", output_dir, True)
+        video_util.merge_videos(f"{root_dir}/{split_output_dir}", f"{output_dir}/", True)
+        # upload
+        video_url = uploadQiniuV2(output_dir, taskid)
+        # notify success
+        resp = requests.post(notify_url,
+                             json={"backendTaskId": taskid, "taskType": 1, "success": True, "resultUrl": video_url})
+        if resp.status_code == 200:
+            result = resp.text
+            print(result)
+            # if result["code"] != "10000":
+            #     print(f"{task_id} 更新任务状态失败。原因: {result}")
+
+        else:
+            print(f"{taskid} 更新任务状态失败，code: {resp.status_code}, message: {resp.reason}")
         print(f"{taskid} 去水印任务已经完成")
     except Exception:
         print(f"{taskid} 执行异常，请及时处理异常: {Exception}")
@@ -127,22 +141,7 @@ def removeLogo(image_path, output_dir, taskid, video_name, video_path):
             # '--resize_ratio', '0.5',
             '--fp16']
     output = subprocess.run(args, capture_output=True, text=True)
-    if output.returncode == 0:
-        # upload
-        video_url = uploadQiniu(output_dir, taskid, video_name)
-        # notify success
-        resp = requests.post(notify_url,
-                             json={"backendTaskId": taskid, "taskType": 1, "success": True, "resultUrl": video_url})
-        if resp.status_code == 200:
-            result = resp.text
-            print(result)
-            # if result["code"] != "10000":
-            #     print(f"{task_id} 更新任务状态失败。原因: {result}")
-
-        else:
-            print(f"{taskid} 更新任务状态失败，code: {resp.status_code}, message: {resp.reason}")
-
-    else:
+    if output.returncode != 0:
         print(f"{taskid} 执行异常，请及时处理错误: {output}")
         # notify error
         resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": False,
@@ -152,13 +151,30 @@ def removeLogo(image_path, output_dir, taskid, video_name, video_path):
 
 
 def uploadQiniu(output_dir, taskid, video_name):
-    output_name = "inpaint_out.mp4"
     # 上传后保存的文件名
     key = f"remove_logo/{taskid}/{output_name}"
     # 生成上传 Token，可以指定过期时间等
     token = q.upload_token(bucket_name, key, 3600)
     # 要上传文件的本地路径
     local_file = f"{root_dir}/{output_dir}/{video_name[:video_name.rindex('.')]}/{output_name}"
+    ret, info = put_file(token, key, local_file, version='v2')
+    print(info)
+    assert ret['key'] == key
+    assert ret['hash'] == etag(local_file)
+    # 更新的生命周期
+    days = '60'
+    ret, info = bucket.delete_after_days(bucket_name, key, days)
+    print(info)
+    return key
+
+
+def uploadQiniuV2(output_dir, taskid):
+    # 上传后保存的文件名
+    key = f"remove_logo/{taskid}/{output_name}"
+    # 生成上传 Token，可以指定过期时间等
+    token = q.upload_token(bucket_name, key, 3600)
+    # 要上传文件的本地路径
+    local_file = f"{root_dir}/{output_dir}/{output_name}"
     ret, info = put_file(token, key, local_file, version='v2')
     print(info)
     assert ret['key'] == key

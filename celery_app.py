@@ -99,6 +99,7 @@ def background_taskV2(request: dict):
         os.makedirs(output_dir, exist_ok=True)
         # split
         split_videos = video_util.split_video(video_path, split_output_dir, 5)
+        print(f"分割后的视频文件: {split_videos}")
         print("开始执行去水印任务。")
         for video in split_videos:
             print(f"正在执行 {video}去水印。")

@@ -126,6 +126,11 @@ def background_taskV2(request: dict):
         print(f"{taskid} 去水印任务已经完成")
     except Exception:
         print(f"{taskid} 执行异常，请及时处理异常: {Exception}")
+        # notify error
+        resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": False,
+                                               "reason": "执行去水印任务失败，请及时联系管理员处理"})
+        if resp.status_code != 200:
+            print(f"{taskid} 更新任务状态失败，code: {resp.status_code}, message: {resp.reason}")
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback)
@@ -144,11 +149,7 @@ def removeLogo(image_path, output_dir, taskid, video_name, video_path):
     output = subprocess.run(args, capture_output=True, text=True)
     if output.returncode != 0:
         print(f"{taskid} 执行异常，请及时处理错误: {output}")
-        # notify error
-        resp = requests.post(notify_url, json={"backendTaskId": taskid, "taskType": 1, "success": False,
-                                               "reason": "执行去水印任务失败，请及时联系管理员处理"})
-        if resp.status_code != 200:
-            print(f"{taskid} 更新任务状态失败，code: {resp.status_code}, message: {resp.reason}")
+        raise RuntimeError(output)
 
 
 def uploadQiniu(output_dir, taskid, video_name):

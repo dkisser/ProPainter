@@ -108,7 +108,8 @@ def background_taskV2(request: dict):
             removeLogo(image_path, split_output_dir, taskid, video_name, video)
             print(f"{video}去水印执行成功。")
         #merge
-        video_util.merge_videos(f"{root_dir}/{split_output_dir}", f"{output_dir}/", True)
+        print("开始执行视频合并任务。")
+        video_util.merge_videos(f"{root_dir}/{split_output_dir}", f"{output_dir}/{output_name}", True)
         # upload
         video_url = uploadQiniuV2(output_dir, taskid)
         # notify success
